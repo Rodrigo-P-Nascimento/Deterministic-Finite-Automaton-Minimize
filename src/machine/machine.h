@@ -8,14 +8,17 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define state_t uint8_t
+#define State_t uint16_t
+#define Alphabet_t uint32_t
 
 typedef struct {
-    state_t stateID;
-    state_t* transitions;
-    bool isFinal;
-} State;
+    Alphabet_t* alphabet;
 
-typedef State* Machine;
+    struct {
+        State_t stateID;
+        struct{State_t destState;Alphabet_t symbol;}* transitions;
+        bool isFinal;
+    }* states;
+}Machine;
 
 #endif //TDC_MACHINE_H
