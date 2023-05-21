@@ -8,44 +8,71 @@
 #include <string.h>
 
 static unsigned int hash(const char* key){
-    unsigned int hash_value = 0;
-    u_int32_t len = strlen(key);
-    for (u_int32_t i = 0; i < len; ++i) {
-        hash_value += key[i];
-        hash_value = (hash_value << 5) ^ (hash_value >> 27);
+    unsigned int hash = 0;
+    unsigned int factor = 31;
+
+    while (*key) {
+        hash = hash * factor + (*key);
+        key++;
     }
-    return hash_value % TABLE_SIZE;
+
+    return hash % TABLE_SIZE;
 }
 
-Dictionary* CreateDictionary(){
+uint32_t arrSize = 0;
+
+Dictionary* CreateDictionary(uint32_t nArr){
+
+    arrSize = nArr;
+
     Dictionary* dictionary = (Dictionary*)malloc(sizeof(Dictionary));
     memset(dictionary, 0, sizeof(Dictionary));
     pthread_mutex_init(&(dictionary->mutex), NULL);
     return dictionary;
 }
 
-void Insert(Dictionary* dictionary, const char* key, Transition* value){
-    unsigned int index = hash(key);
+static inline Entry* NewEntry(const char* key, Transition* value) {
     Entry* new_entry = (Entry*)malloc(sizeof(Entry));
     new_entry->key = strdup(key);
-    new_entry->value = value;
+    new_entry->arrSize = 1;
+    new_entry->value = calloc(sizeof(Transition*), arrSize);
+    new_entry->value[new_entry->arrSize] = value;
     new_entry->next = NULL;
 
-    pthread_mutex_lock(&(dictionary->mutex));
+    return new_entry;
+}
 
-    if (dictionary->table[index] == NULL) {
-        dictionary->table[index] = new_entry;
-    } else {
+void Insert(Dictionary* dictionary, const char* key, Transition* value){
+    unsigned int index = hash(key);
+
+    if (dictionary->table[index] != NULL) {
         Entry* current = dictionary->table[index];
-        while (current->next != NULL)
+
+        pthread_mutex_lock(&(dictionary->mutex));
+        while (current->next != NULL) {
             current = current->next;
-        current->next = new_entry;
+            if(strcmp(current->key, key) == 0){
+                current->value[current->arrSize++] = value;
+                break;
+            }
+        }
+
+        if (current->next == NULL){
+            Entry* entry = NewEntry(key, value);
+            pthread_mutex_lock(&(dictionary->mutex));
+            current->next = entry;
+        }
+    } else {
+        Entry* entry = NewEntry(key, value);
+
+        pthread_mutex_lock(&(dictionary->mutex));
+        dictionary->table[index] = entry;
     }
 
     pthread_mutex_unlock(&(dictionary->mutex));
 }
 
-const Transition* find(Dictionary* dictionary, const char* key){
+Transition** Find(Dictionary* dictionary, const char* key){
     unsigned int index = hash(key);
 
     pthread_mutex_lock(&(dictionary->mutex));
@@ -70,8 +97,10 @@ void DestroyDictionary(Dictionary* dictionary){
         while (current != NULL) {
             Entry* next = current->next;
             free(current->key);
-            free(current->value->state);
-            free(current->value->symbol);
+            for(uint32_t j =0 ; i < arrSize || current->value[j]->symbol[0] == '\0'; ++j ){
+                free(current->value[j]->state);
+                free(current->value[j]->symbol);
+            }
             free(current->value);
             free(current);
             current = next;

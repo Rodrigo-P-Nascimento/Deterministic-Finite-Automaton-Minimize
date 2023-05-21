@@ -4,16 +4,19 @@
 
 #include "input.h"
 #include "../dictionary/dictionary.h"
+#include "../Threading/threading.h"
+#include "../Threading/wait_group.h"
 
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <pthread.h>
 
 #define BUFFER_SIZE 100
 
 #define char_size sizeof(char)
 typedef char* String;
-#define Wlen(strct) struct{strct data; uint16_t size;}
+#define Wlen(strct) struct{strct data; uint32_t size;}
 #define len(data) data.size
 typedef Wlen(String*) String_l;
 
@@ -69,6 +72,14 @@ static inline void Assign(char* buf, String_l * restrict dst){
     Tokenize(data, dst);
 }
 
+uint32_t threadCount = 0;
+
+static inline void Dispatch(void** arg){    // [Dictionary, key, Transition]
+    Insert((Dictionary*)arg[0], (char*)arg[1], (Transition*)arg[2]);
+    free(arg[1]); //key is not stored directly in the dictionary
+    WG_Done(arg[3]);
+}
+
 error_t ReadFile(char* path){
 
     error_t err = OK;
@@ -113,19 +124,36 @@ error_t ReadFile(char* path){
     a.transitions = CreateDictionary();
 
     String token;
+    ThreadTask task = {.task = Dispatch, .arg = calloc(sizeof(void*), 4)};
+    WaitGroup* wg = WG_New(0);
     while ((token = strtok_r(buffer, "\n", &buffer))){
         //tratar quando a entrada não for: state, state, symbol
         //tratar quando o símbolo não estiver no alfabeto
+        
+        if(0){
+            goto waitgroup;
+        }
+        
         String state0 = strdup(strtok(token, ",")),
             state1 = strdup(strtok(token, ",")),
             symbol = strdup(strtok(token, ","));
 
         Transition* tr = malloc(sizeof(Transition));
-        tr->state = state1; tr->symbol = symbol;
+        tr->state = strdup(state1); tr->symbol = strdup(symbol);
 
-        Insert(a.transitions, state0, tr);
+        task.arg[0] = (void*)a.transitions;
+        task.arg[1] = (void*) strdup(state0);
+        task.arg[2] = (void*)tr;
+        task.arg[3] = (void*)wg;
+        AddTask(task);
+
+        WG_Add(wg,1);
     }
 
+    WG_Wait(wg);
+    
+    waitgroup:
+    WG_Destroy(wg);
     file:
     fclose(fp);
     mem:
