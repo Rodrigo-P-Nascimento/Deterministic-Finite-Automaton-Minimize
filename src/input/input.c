@@ -77,6 +77,7 @@ uint32_t threadCount = 0;
 static inline void Dispatch(void** arg){    // [Dictionary, key, Transition]
     Insert((Dictionary*)arg[0], (char*)arg[1], (Transition*)arg[2]);
     free(arg[1]); //key is not stored directly in the dictionary
+
     WG_Done(arg[3]);
 }
 
@@ -121,7 +122,7 @@ error_t ReadFile(char* path){
     }
 
     assert(fread(buffer, char_size, 2000, fp) < BUFFER_SIZE*10);
-    a.transitions = CreateDictionary();
+    a.transitions = CreateDictionary(len(a.alphabet));
 
     String token;
     ThreadTask task = {.task = Dispatch, .arg = calloc(sizeof(void*), 4)};
@@ -173,7 +174,7 @@ void InitMachine(Machine machine){
 
 static inline void Destroy(String_l * str){
 
-    for(uint16_t i = 0; i <= str->size; ++i){
+    for(uint32_t i = 0; i <= str->size; ++i){
         free((str->data)[i]);
     }
     free(str->data);

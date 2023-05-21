@@ -57,8 +57,10 @@ void Insert(Dictionary* dictionary, const char* key, Transition* value){
             }
         }
 
+        pthread_mutex_unlock(&(dictionary->mutex));
         if (current->next == NULL){
             Entry* entry = NewEntry(key, value);
+
             pthread_mutex_lock(&(dictionary->mutex));
             current->next = entry;
         }
