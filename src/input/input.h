@@ -18,7 +18,7 @@ typedef enum {
 
 error_t ReadFile(char* path);
 error_t Validate();
-void InitMachine(Machine machine);
+void InitMachine(Machine_t *machine);
 
 
 #endif //TDC_INPUT_H

@@ -10,7 +10,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
-#include <pthread.h>
 
 #define BUFFER_SIZE 100
 
@@ -18,6 +17,7 @@
 typedef char* String;
 #define Wlen(strct) struct{strct data; uint32_t size;}
 #define len(data) data.size
+
 typedef Wlen(String*) String_l;
 
 typedef struct {
@@ -64,7 +64,6 @@ static void Tokenize(char* src, String_l* dst) {
         dst->data[i++] = strdup(token);
     }
 }
-
 
 static inline void Assign(char* buf, String_l * restrict dst){
 
@@ -203,11 +202,78 @@ error_t ReadFile(char* path) {
 
 error_t Validate(){
 
+    return OK;
 }
 
-void InitMachine(Machine machine){
+static inline uint32_t hash(const char* key){
+    uint32_t hash = 0;
+    const uint8_t factor = 31;
 
+    while (*key) {
+        hash = hash * factor + (*key);
+        key++;
+    }
 
+    return hash % UINT32_MAX;
+}
+
+static inline Machine_stateID_t idx(char* src){
+    for(uint32_t i = 0; i < len(a.states); ++i){
+        if (!strcmp(a.states.data[i], src))
+            return i;
+    }
+
+    return UINT32_MAX;
+}
+
+static inline void populateStates(void** args){
+    Machine_state_t* state = (Machine_state_t*)args[0];
+
+    //if the current state is in the final states array, sets the boolean to true
+    for(uint32_t j = 0; j < len(a.F); ++j)
+        state->isFinal = strcmp(a.F.data[j], a.states.data[state->stateID]) == 0? true: false;
+
+    //retrieve the transitions array and allocate the machine transitions array
+    Transition_t transitions = Find(a.transitions, a.states.data[state->stateID]);
+    assert(transitions.array != NULL);
+    state->transitions = calloc(sizeof(Machine_Transition_t), transitions.arrSize);
+
+    //populate the machine transitions array
+    for (uint32_t j = 0; j < transitions.arrSize; ++j){
+        state->transitions[j].symbol = hash(transitions.array[j]->symbol);
+        state->transitions[j].destState = idx(transitions.array[j]->state);
+
+        if (state->transitions[j].destState == UINT32_MAX)
+            //error, o estado destino da transição não está na lista de estados
+            exit(-1);
+    }
+
+    WG_Done(args[2]);
+}
+
+void InitMachine(Machine_t* machine){
+    uint32_t i;
+
+    //allocate the alphabet array and populate it with the hash of the string
+    machine->alphabet = calloc(sizeof(Machine_alphabet_t), len(a.alphabet));
+    for(i = 0; i < len(a.alphabet); ++i){
+        machine->alphabet[i] = hash(a.alphabet.data[i]);
+    }
+
+    ThreadTask task = {.task = populateStates, .arg = calloc(sizeof(void*), 2)};
+    WaitGroup* wg = WG_New(0);
+
+    machine->states = calloc(sizeof(Machine_stateID_t), len(a.states));
+    for(i = 0; i < len(a.states); ++i){
+        machine->states[i].stateID = i;
+        task.arg[0] = &machine->states[i];
+        task.arg[1] = &wg;
+
+        WG_Add(wg, 1);
+    }
+
+    WG_Wait(wg);
+    WG_Destroy(wg);
 }
 
 static inline void Destroy(String_l * str){

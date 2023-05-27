@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static unsigned int hash(const char* key){
+static inline unsigned int hash(const char* key){
     unsigned int hash = 0;
     unsigned int factor = 31;
 
@@ -34,9 +34,9 @@ Dictionary* CreateDictionary(uint32_t nArr){
 static inline Entry* NewEntry(const char* key, Transition* value) {
     Entry* new_entry = (Entry*)malloc(sizeof(Entry));
     new_entry->key = strdup(key);
-    new_entry->arrSize = 1;
-    new_entry->value = calloc(sizeof(Transition*), arrSize);
-    new_entry->value[new_entry->arrSize] = value;
+    new_entry->value.arrSize = 1;
+    new_entry->value.array = calloc(sizeof(Transition*), arrSize);
+    new_entry->value.array[new_entry->value.arrSize-1] = value;
     new_entry->next = NULL;
 
     return new_entry;
@@ -52,7 +52,7 @@ void Insert(Dictionary* dictionary, const char* key, Transition* value){
         while (current->next != NULL) {
             current = current->next;
             if(strcmp(current->key, key) == 0){
-                current->value[current->arrSize++] = value;
+                current->value.array[current->value.arrSize++] = value;
                 break;
             }
         }
@@ -74,7 +74,7 @@ void Insert(Dictionary* dictionary, const char* key, Transition* value){
     pthread_mutex_unlock(&(dictionary->mutex));
 }
 
-Transition** Find(Dictionary* dictionary, const char* key){
+Transition_t Find(Dictionary* dictionary, const char* key){
     unsigned int index = hash(key);
 
     pthread_mutex_lock(&(dictionary->mutex));
@@ -90,7 +90,8 @@ Transition** Find(Dictionary* dictionary, const char* key){
 
     pthread_mutex_unlock(&(dictionary->mutex));
 
-    return NULL;
+    Transition_t error_ret = {.array = NULL, .arrSize = 0};
+    return error_ret;
 }
 
 void DestroyDictionary(Dictionary* dictionary){
@@ -99,11 +100,11 @@ void DestroyDictionary(Dictionary* dictionary){
         while (current != NULL) {
             Entry* next = current->next;
             free(current->key);
-            for(uint32_t j =0 ; i < arrSize || current->value[j]->symbol[0] == '\0'; ++j ){
-                free(current->value[j]->state);
-                free(current->value[j]->symbol);
+            for(uint32_t j =0 ; i < arrSize || current->value.array[j]->symbol[0] == '\0'; ++j ){
+                free(current->value.array[j]->state);
+                free(current->value.array[j]->symbol);
             }
-            free(current->value);
+            free(current->value.array);
             free(current);
             current = next;
         }
