@@ -36,7 +36,7 @@ void inline WG_Wait(WaitGroup* wg){
     pthread_mutex_unlock(&wg->mutex);
 }
 
-void inline Destroy(WaitGroup* wg){
+void inline WG_Destroy(WaitGroup* wg){
     pthread_mutex_destroy(&wg->mutex);
     pthread_cond_destroy(&wg->signal);
     free(wg);
