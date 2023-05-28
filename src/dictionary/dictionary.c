@@ -6,6 +6,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 static inline unsigned int hash(const char* key){
     unsigned int hash = 0;
@@ -45,32 +46,27 @@ static inline Entry* NewEntry(const char* key, Transition* value) {
 void Insert(Dictionary* dictionary, const char* key, Transition* value){
     unsigned int index = hash(key);
 
-    if (dictionary->table[index] != NULL) {
-        Entry* current = dictionary->table[index];
+    Entry** current = &dictionary->table[index];
 
+    if (*current) {
         pthread_mutex_lock(&(dictionary->mutex));
-        while (current->next != NULL) {
-            current = current->next;
-            if(strcmp(current->key, key) == 0){
-                current->value.array[current->value.arrSize++] = value;
-                break;
+        do {
+            //if found the key, update the array
+            if (strcmp((*current)->key, key) == 0) {
+                (*current)->value.array[(*current)->value.arrSize++] = value;
+                pthread_mutex_unlock(&(dictionary->mutex));
+                return;
             }
-        }
-
+            //else, continue going through de list
+        } while ((*current = (*current)->next));
         pthread_mutex_unlock(&(dictionary->mutex));
-        if (current->next == NULL){
-            Entry* entry = NewEntry(key, value);
-
-            pthread_mutex_lock(&(dictionary->mutex));
-            current->next = entry;
-        }
-    } else {
-        Entry* entry = NewEntry(key, value);
-
-        pthread_mutex_lock(&(dictionary->mutex));
-        dictionary->table[index] = entry;
     }
 
+    assert((*current) == NULL);
+    Entry* entry = NewEntry(key, value);
+
+    pthread_mutex_lock(&(dictionary->mutex));
+    *current = entry;
     pthread_mutex_unlock(&(dictionary->mutex));
 }
 

@@ -49,14 +49,14 @@ static void Tokenize(char* src, String_l* dst) {
     dst->size = ((strlen(src) + 1) / (size + 1));
     String token;
 
-    if (strlen(src) % 2 != 1)
-        return;
+//    if (strlen(src) % 2 != 1)
+//        return;
 
     // Check if String[] is NULL
     assert(dst->data == NULL);
 
     // Allocate String[]
-    dst->data = calloc(sizeof(String_l), dst->size);
+    dst->data = calloc(sizeof(String*), dst->size);
 
     //iterate through the CSV and put them in the array
     uint16_t i = 0;
@@ -86,6 +86,12 @@ static inline void Dispatch(void** arg){    // [Dictionary, key, Transition]
     WG_Done(arg[3]);
 }
 
+#define readLine(buffer, size, fp)          \
+    do {                                    \
+         fgets(buffer, BUFFER_SIZE, fp);    \
+         buffer[strlen(buffer)-1] = '\0';   \   
+    }while(0) 
+
 /**
  * Reads the DFA file from the given path and assigns values to the DFA_file structure.
  * Creates transitions in the dictionary using multithreading.
@@ -100,26 +106,26 @@ error_t ReadFile(char* path) {
     char *buffer = calloc(BUFFER_SIZE, char_size);
     if (!buffer) {
         err = ALLOCATION_ERROR;
-        goto mem;
+        goto ret;
     }
 
     // Open the file for reading
     FILE* fp = fopen(path, "r");
     if (!fp) {
         err = FILE_DOESNT_EXIST;
-        goto file;
+        goto mem;
     }
 
     // Read the alphabet from the file and assign it to DFA_file.alphabet
-    fread(buffer, BUFFER_SIZE, 1, fp);
+    readLine(buffer, BUFFER_SIZE, fp);
     Assign(buffer, &a.alphabet);
 
     // Read the states from the file and assign them to DFA_file.states
-    fread(buffer, BUFFER_SIZE, 1, fp);
+    readLine(buffer, BUFFER_SIZE, fp);
     Assign(buffer, &a.states);
 
     // Read the initial state from the file and assign it to DFA_file.q0
-    fread(buffer, BUFFER_SIZE, 1, fp);
+    readLine(buffer, BUFFER_SIZE, fp);
     {
         assert(strtok(buffer, ":") != NULL);
         char* tkn = strtok(NULL, ":");
@@ -127,11 +133,11 @@ error_t ReadFile(char* path) {
     }
 
     // Read the final states from the file and assign them to DFA_file.F
-    fread(buffer, BUFFER_SIZE, 1, fp);
+    readLine(buffer, BUFFER_SIZE, fp);
     Assign(buffer, &a.F);
 
     // Read the transitions from the file and create dictionary entries using multithreading
-    fread(buffer, BUFFER_SIZE, 1, fp);
+    readLine(buffer, BUFFER_SIZE, fp);
 
     // Increase the buffer size if needed
     if (!(buffer = reallocarray(buffer, BUFFER_SIZE * 10, char_size))) {
@@ -160,8 +166,8 @@ error_t ReadFile(char* path) {
 
         // Extract the state0, state1, and symbol from the token
         String state0 = strdup(strtok(token, ",")),
-                state1 = strdup(strtok(token, ",")),
-                symbol = strdup(strtok(token, ","));
+                state1 = strdup(strtok(NULL, ",")),
+                symbol = strdup(strtok(NULL, ","));
 
         // Create a Transition object
         Transition* tr = malloc(sizeof(Transition));
@@ -174,11 +180,12 @@ error_t ReadFile(char* path) {
         task.arg[2] = (void*)tr;
         task.arg[3] = (void*)wg;
 
-        // Add the task to the task queue
-        AddTask(task);
-
         // Increment the WaitGroup counter
         WG_Add(wg, 1);
+
+        // Add the task to the task queue
+        Dispatch(task.arg);
+//        AddTask(task);
     }
 
     // Wait for all tasks to complete
@@ -196,6 +203,7 @@ error_t ReadFile(char* path) {
     // Free the buffer memory
     free(buffer);
 
+    ret:
     // Return the error code
     return err;
 }
