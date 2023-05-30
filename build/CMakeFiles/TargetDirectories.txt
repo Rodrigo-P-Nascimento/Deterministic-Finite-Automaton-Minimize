@@ -1,3 +1,0 @@
-/home/rodrigo/Documentos/GitHub/Teoria-da-Computacao/build/CMakeFiles/TDC.dir
-/home/rodrigo/Documentos/GitHub/Teoria-da-Computacao/build/CMakeFiles/edit_cache.dir
-/home/rodrigo/Documentos/GitHub/Teoria-da-Computacao/build/CMakeFiles/rebuild_cache.dir

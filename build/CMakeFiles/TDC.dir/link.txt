@@ -1,1 +1,0 @@
-/usr/bin/cc -g CMakeFiles/TDC.dir/src/main.c.o CMakeFiles/TDC.dir/src/input/input.c.o CMakeFiles/TDC.dir/src/Threading/threading.c.o CMakeFiles/TDC.dir/src/dictionary/dictionary.c.o CMakeFiles/TDC.dir/src/Threading/wait_group.c.o CMakeFiles/TDC.dir/src/Myhill-Nerode/minimization.c.o -o TDC 
