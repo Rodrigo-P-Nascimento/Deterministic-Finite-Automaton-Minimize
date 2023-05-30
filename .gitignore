@@ -1,4 +1,4 @@
 
-.vscode/*
-CMakeLists.txt
-.build/*
+/vscode/*
+/CMakeLists.txt/
+/build/*
