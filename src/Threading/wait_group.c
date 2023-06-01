@@ -15,20 +15,20 @@ WaitGroup *WG_New(uint64_t n){
     return wg;
 }
 
-void inline WG_Add(WaitGroup* wg, uint64_t n){
+inline void WG_Add(WaitGroup* wg, uint64_t n){
     pthread_mutex_lock(&wg->mutex);
     wg->count += n;
     pthread_mutex_unlock(&wg->mutex);
 }
 
-void inline WG_Done(WaitGroup* wg){
+inline void WG_Done(WaitGroup* wg){
     pthread_mutex_lock(&wg->mutex);
     wg->count--;
     pthread_cond_signal(&wg->signal);
     pthread_mutex_unlock(&wg->mutex);
 }
 
-void inline WG_Wait(WaitGroup* wg){
+inline void WG_Wait(WaitGroup* wg){
     pthread_mutex_lock(&wg->mutex);
     while (wg->count > 0) {
         pthread_cond_wait(&wg->signal, &wg->mutex);
@@ -36,7 +36,7 @@ void inline WG_Wait(WaitGroup* wg){
     pthread_mutex_unlock(&wg->mutex);
 }
 
-void inline WG_Destroy(WaitGroup* wg){
+inline void WG_Destroy(WaitGroup* wg){
     pthread_mutex_destroy(&wg->mutex);
     pthread_cond_destroy(&wg->signal);
     free(wg);

@@ -16,7 +16,7 @@ int main(int argc, char** argv){
         exit(-1);
     }
 
-//    CreateThreadPool();
+    CreateThreadPool();
 
     Machine_t machine = {};
     error_t err = ReadFile(argv[1]);

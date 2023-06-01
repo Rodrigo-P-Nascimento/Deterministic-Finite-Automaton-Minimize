@@ -89,7 +89,7 @@ static inline void Dispatch(void** arg){    // [Dictionary, key, Transition]
 #define readLine(buffer, size, fp)          \
     do {                                    \
          fgets(buffer, BUFFER_SIZE, fp);    \
-         buffer[strlen(buffer)-1] = '\0';   \   
+         buffer[strlen(buffer)-1] = '\0';   \
     }while(0) 
 
 /**
@@ -185,7 +185,7 @@ error_t ReadFile(char* path) {
 
         // Add the task to the task queue
         Dispatch(task.arg);
-//        AddTask(task);
+        //AddTask(task);
     }
 
     // Wait for all tasks to complete
@@ -208,7 +208,7 @@ error_t ReadFile(char* path) {
     return err;
 }
 
-error_t Validate(){
+error_t Validate(void){
 
     return OK;
 }
@@ -263,7 +263,7 @@ void InitMachine(Machine_t* machine){
     uint32_t i;
 
     //allocate the alphabet array and populate it with the hash of the string
-    machine->alphabet = calloc(sizeof(Machine_alphabet_t), len(a.alphabet));
+    machine->alphabet = calloc(len(a.alphabet), sizeof(Machine_alphabet_t));
     for(i = 0; i < len(a.alphabet); ++i){
         machine->alphabet[i] = hash(a.alphabet.data[i]);
     }
@@ -271,7 +271,7 @@ void InitMachine(Machine_t* machine){
     ThreadTask task = {.task = populateStates, .arg = calloc(sizeof(void*), 2)};
     WaitGroup* wg = WG_New(0);
 
-    machine->states = calloc(sizeof(Machine_stateID_t), len(a.states));
+    machine->states = calloc(len(a.states), sizeof(Machine_stateID_t));
     for(i = 0; i < len(a.states); ++i){
         machine->states[i].stateID = i;
         task.arg[0] = &machine->states[i];
@@ -292,7 +292,7 @@ static inline void Destroy(String_l * str){
     free(str->data);
 }
 
-void DestroyDFA(){
+void DestroyDFA(void){
     Destroy(&a.alphabet);
     Destroy(&a.states);
     Destroy(&a.F);

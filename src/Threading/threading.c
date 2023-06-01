@@ -3,20 +3,18 @@
 //
 
 #include "threading.h"
-#include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <assert.h>
+#include <stdatomic.h>
 
 #ifdef _WIN32
 #include <Windows.h>
 #else
 #include <unistd.h>
 #endif
-
-#define MAX_THREADS 16 // Maximum number of threads in the pool
 
 typedef struct {
     pthread_t* threads;
@@ -27,7 +25,7 @@ typedef struct {
 } ThreadPool;
 
 static ThreadPool pool = {};
-static ThreadTask* threadTask;
+static ThreadTask* threadTask = NULL;
 
 #ifdef _WIN32
 static inline long getPhysicalProcessorCount()
@@ -49,7 +47,7 @@ static void* workerThread()
 
     while (1) {
         pthread_mutex_lock(&(pool.mutex));
-        while (!pool.shutdown && pool.num_threads == 0) {
+        while (threadTask == NULL && !pool.shutdown) {
             pthread_cond_wait(&(pool.cond), &(pool.mutex));
         }
 
@@ -71,7 +69,7 @@ static void* workerThread()
 
 void AddTask(ThreadTask task)
 {
-    while(!(threadTask = threadTask)) continue;
+    while((threadTask = atomic_load(&threadTask)) != NULL) continue;
 
     pthread_mutex_lock(&(pool.mutex));
     threadTask = malloc(sizeof(ThreadTask));
@@ -88,7 +86,7 @@ void CreateThreadPool()
     pthread_mutex_init(&(pool.mutex), NULL);
     pthread_cond_init(&(pool.cond), NULL);
 
-    pool.threads = calloc(sizeof(pthread_t), pool.num_threads);
+    pool.threads = calloc(pool.num_threads, sizeof(pthread_t));
 
     for (int i = 0; i < pool.num_threads; ++i)
         pthread_create(&(pool.threads[i]), NULL, workerThread, NULL);

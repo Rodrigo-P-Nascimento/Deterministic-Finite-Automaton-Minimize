@@ -91,7 +91,7 @@ Transition_t Find(Dictionary* dictionary, const char* key){
 }
 
 void DestroyDictionary(Dictionary* dictionary){
-    for (int i = 0; i < TABLE_SIZE; ++i) {
+    for (uint32_t i = 0; i < TABLE_SIZE; ++i) {
         Entry* current = dictionary->table[i];
         while (current != NULL) {
             Entry* next = current->next;
