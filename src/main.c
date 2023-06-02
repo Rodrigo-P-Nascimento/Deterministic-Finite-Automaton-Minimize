@@ -11,12 +11,14 @@
 
 int main(int argc, char** argv){
 
-    if(argc != 2){
+    if(argc < 2){
         //sem arquivo
         exit(-1);
     }
 
     CreateThreadPool();
+
+    printf("threads created\n");
 
     Machine_t machine = {};
     error_t err = ReadFile(argv[1]);

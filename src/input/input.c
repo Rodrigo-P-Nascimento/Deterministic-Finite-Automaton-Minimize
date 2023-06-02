@@ -78,10 +78,12 @@ static inline void Assign(char* buf, String_l * restrict dst){
     Tokenize(data, dst);
 }
 
-uint32_t threadCount = 0;
-
 static inline void Dispatch(void** arg){    // [Dictionary, key, Transition]
     Insert((Dictionary*)arg[0], (char*)arg[1], (Transition*)arg[2]);
+
+    printf("transition %s -> %s @ %s processed\n", ((char*)arg[1]),
+           ((Transition*)arg[2])->state, ((Transition*)arg[2])->symbol);
+
     free(arg[1]);
     WG_Done(arg[3]);
 }
@@ -119,10 +121,12 @@ error_t ReadFile(char* path) {
     // Read the alphabet from the file and assign it to DFA_file.alphabet
     readLine(buffer, BUFFER_SIZE, fp);
     Assign(buffer, &a.alphabet);
+    printf("alphabet read\n");
 
     // Read the states from the file and assign them to DFA_file.states
     readLine(buffer, BUFFER_SIZE, fp);
     Assign(buffer, &a.states);
+    printf("states read\n");
 
     // Read the initial state from the file and assign it to DFA_file.q0
     readLine(buffer, BUFFER_SIZE, fp);
@@ -131,10 +135,12 @@ error_t ReadFile(char* path) {
         char* tkn = strtok(NULL, ":");
         a.q0 = strdup(tkn);
     }
+    printf("initial state read\n");
 
     // Read the final states from the file and assign them to DFA_file.F
     readLine(buffer, BUFFER_SIZE, fp);
     Assign(buffer, &a.F);
+    printf("final states read\n");
 
     // Read the transitions from the file and create dictionary entries using multithreading
     readLine(buffer, BUFFER_SIZE, fp);
@@ -150,6 +156,7 @@ error_t ReadFile(char* path) {
 
     // Create the transitions dictionary
     a.transitions = CreateDictionary(len(a.alphabet));
+    printf("transitions created\n");
 
     // Prepare the task for multithreading
     String reent;
@@ -170,6 +177,7 @@ error_t ReadFile(char* path) {
                 state1 = strdup(strtok(NULL, ",")),
                 symbol = strdup(strtok(NULL, ","));
 
+         printf("read transition %s -> %s @ %s\n", state0, state1, symbol);
         // Create a Transition object
         Transition* tr = malloc(sizeof(Transition));
         tr->state = state1;
@@ -185,8 +193,8 @@ error_t ReadFile(char* path) {
         WG_Add(wg, 1);
 
         // Add the task to the task queue
-//        Dispatch(task.args);
-        AddTask(task);
+        Dispatch(task.args);
+//        AddTask(task);
     }while ((token = strtok_r(NULL, "\n", &reent)));
 
     // Wait for all tasks to complete
@@ -272,7 +280,8 @@ void InitMachine(Machine_t* machine){
     ThreadTask task = {.task = populateStates, .args = calloc(2, sizeof(void*))};
     WaitGroup* wg = WG_New(0);
 
-    machine->states = calloc(len(a.states), sizeof(Machine_stateID_t));
+    //allocate the states array
+    machine->states = calloc(sizeof(Machine_state_t), len(a.states));
     for(i = 0; i < len(a.states); ++i){
         machine->states[i].stateID = i;
         task.args[0] = &machine->states[i];
