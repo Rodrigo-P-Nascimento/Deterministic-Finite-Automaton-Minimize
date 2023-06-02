@@ -152,12 +152,13 @@ error_t ReadFile(char* path) {
     a.transitions = CreateDictionary(len(a.alphabet));
 
     // Prepare the task for multithreading
-    String token;
-    ThreadTask task = {.task = Dispatch, .arg = calloc(sizeof(void*), 4)};
+    String reent;
+    String token = strtok_r(buffer, "\n", &reent);
+    ThreadTask task = {.task = Dispatch, .args = calloc(4, sizeof(void*))};
     WaitGroup* wg = WG_New(0);
 
     // Process each line of the buffer as a transition and add it to the dictionary
-    while ((token = strtok_r(buffer, "\n", &buffer))) {
+     do{
         // Handle cases where the input is not in the form "state, state, symbol"
         // Handle cases where the symbol is not in the alphabet
         if (0) {
@@ -175,18 +176,18 @@ error_t ReadFile(char* path) {
         tr->symbol = symbol;
 
         // Set the arguments for the Dispatch task
-        task.arg[0] = (void*)a.transitions;
-        task.arg[1] = (void*)strdup(state0);
-        task.arg[2] = (void*)tr;
-        task.arg[3] = (void*)wg;
+        task.args[0] = (void*)a.transitions;
+        task.args[1] = (void*)strdup(state0);
+        task.args[2] = (void*)tr;
+        task.args[3] = (void*)wg;
 
         // Increment the WaitGroup counter
         WG_Add(wg, 1);
 
         // Add the task to the task queue
-        Dispatch(task.arg);
-        //AddTask(task);
-    }
+//        Dispatch(task.args);
+        AddTask(task);
+    }while ((token = strtok_r(NULL, "\n", &reent)));
 
     // Wait for all tasks to complete
     WG_Wait(wg);
@@ -256,7 +257,7 @@ static inline void populateStates(void** args){
             exit(-1);
     }
 
-    WG_Done(args[2]);
+    WG_Done(args[1]);
 }
 
 void InitMachine(Machine_t* machine){
@@ -268,16 +269,18 @@ void InitMachine(Machine_t* machine){
         machine->alphabet[i] = hash(a.alphabet.data[i]);
     }
 
-    ThreadTask task = {.task = populateStates, .arg = calloc(sizeof(void*), 2)};
+    ThreadTask task = {.task = populateStates, .args = calloc(2, sizeof(void*))};
     WaitGroup* wg = WG_New(0);
 
     machine->states = calloc(len(a.states), sizeof(Machine_stateID_t));
     for(i = 0; i < len(a.states); ++i){
         machine->states[i].stateID = i;
-        task.arg[0] = &machine->states[i];
-        task.arg[1] = &wg;
+        task.args[0] = &machine->states[i];
+        task.args[1] = wg;
 
         WG_Add(wg, 1);
+        populateStates(task.args);
+//        AddTask(task);
     }
 
     WG_Wait(wg);

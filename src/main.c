@@ -23,7 +23,7 @@ int main(int argc, char** argv){
 
     switch(err){
         case OK:
-            printf("File opened!"); // This case is executed when the file is successfully opened.
+            printf("File opened!\n"); // This case is executed when the file is successfully opened.
             break;
         case FILE_DOESNT_EXIST:
             printf("File does not exist!"); // This case is executed when the file does not exist.
@@ -36,7 +36,7 @@ int main(int argc, char** argv){
             return -3; //Returning -3 indicates an error occurred due to an invalid file.
     }
 
-    printf("input file read");
+    printf("input file read\n");
     InitMachine(&machine);
 
     return 0;

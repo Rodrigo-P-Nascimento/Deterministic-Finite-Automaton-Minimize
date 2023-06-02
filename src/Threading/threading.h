@@ -6,7 +6,7 @@
 
 typedef struct {
     void (*task)(void**);
-    void** arg;
+    void** args;
 } ThreadTask;
 
 void CreateThreadPool();

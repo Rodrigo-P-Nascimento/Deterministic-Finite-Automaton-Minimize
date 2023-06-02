@@ -11,4 +11,4 @@ add_executable(TDC
 
 target_link_libraries(TDC PRIVATE ${CMAKE_THREAD_LIBS_INIT})
 
-target_compile_options(TDC PRIVATE -Wall -Wextra -Werror -O2)
+target_compile_options(TDC PRIVATE -Wall -Wextra -Werror)

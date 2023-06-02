@@ -5,6 +5,7 @@
 #include "wait_group.h"
 
 #include <stdlib.h>
+#include <stdatomic.h>
 
 WaitGroup *WG_New(uint64_t n){
     WaitGroup* wg = malloc(sizeof(WaitGroup));
@@ -30,7 +31,7 @@ inline void WG_Done(WaitGroup* wg){
 
 inline void WG_Wait(WaitGroup* wg){
     pthread_mutex_lock(&wg->mutex);
-    while (wg->count > 0) {
+    while (atomic_load(&wg->count) > 0) {
         pthread_cond_wait(&wg->signal, &wg->mutex);
     }
     pthread_mutex_unlock(&wg->mutex);

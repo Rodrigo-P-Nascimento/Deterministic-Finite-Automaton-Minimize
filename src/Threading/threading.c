@@ -58,18 +58,19 @@ static void* workerThread()
 
         assert(threadTask != NULL);
         task = threadTask;
-        threadTask = NULL;
+        atomic_store_explicit(&threadTask, NULL, memory_order_seq_cst);
+        assert(threadTask == NULL);
 
         pthread_mutex_unlock(&(pool.mutex));
 
-        task->task(task->arg);
+        task->task(task->args);
         free(task);
     }
 }
 
 void AddTask(ThreadTask task)
 {
-    while((threadTask = atomic_load(&threadTask)) != NULL) continue;
+    //while(atomic_load(&threadTask) != NULL) continue;
 
     pthread_mutex_lock(&(pool.mutex));
     threadTask = malloc(sizeof(ThreadTask));
