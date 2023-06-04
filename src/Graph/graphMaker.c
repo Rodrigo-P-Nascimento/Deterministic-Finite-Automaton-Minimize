@@ -1,11 +1,12 @@
 #include <graphviz/cgraph.h>
 #include <graphviz/gvc.h>
-#include "machine.h"
+#include "../machine/machine.h"
 
-//gcc grafo.c -o grafo -lgvc -lcgraph
+//gcc graphMaker.c -o graphMaker -lgvc -lcgraph
 
 int main() {
 
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     //Declaramos a maquina aqui bro
     Machine_t maquina;
 
@@ -46,14 +47,15 @@ int main() {
     maquina.alphabet = alfabeto;
     maquina.states = filhos;
     maquina.initial = 0;
-
+    
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
     size_t tamAlpha = sizeof(maquina.alphabet)/sizeof(maquina.alphabet[0]);
-    size_t quantStates = 3;
+    size_t quantStates = sizeof(maquina.states)/sizeof(maquina.states[0]);
 
-    Agnode_t* nos[quantStates];
+    Agnode_t vertex[quantStates];
     Agraph_t *g;
     Agedge_t *e0;
-    char estados[20];
+    char auxString[20];
 
     GVC_t *gvc = gvContext();
 
@@ -61,31 +63,31 @@ int main() {
     g = agopen("g", Agdirected, NULL);
 
     for(int i = 0; i < quantStates; i++){
-        sprintf(estados, "q%d", i);//fazemos um casting de int para string
-        nos[i] = agnode(g, estados, 1);//Adiciona os nós no grafo
+        sprintf(auxString, "q%d", i);//fazemos um casting de int para string
+        vertex[i] = agnode(g, auxString, 1);//Adiciona os nós no grafo
 
         if(i == maquina.initial){
-            agsafeset(nos[i], "shape", "diamond", "");
+            agsafeset(vertex[i], "shape", "diamond", "");
         }else{
-            agsafeset(nos[i], "shape", "circle", "");//setando os nós como o formato de circulo
+            agsafeset(vertex[i], "shape", "circle", "");//setando os nós como o formato de circulo
         }
 
         if(maquina.states[i].isFinal){
-            agsafeset(nos[i], "peripheries", "2", "");
+            agsafeset(vertex[i], "peripheries", "2", "");
         }
     }
 
-    Agnode_t *notf[0] = {};
+    Agnode_t Aux[0] = {};
 
     for(size_t i = 0; i < quantStates; i++){
         for(size_t j = 0; j < tamAlpha; j++){
 
-            sprintf(estados, "q%d", maquina.states[i].transitions[j].destState);
-            notf[0] = agnode(g, estados, 1);//Adiciona os nós no grafo
+            sprintf(auxString, "q%d", maquina.states[i].transitions[j].destState);
+            noAux[0] = agnode(g, auxString, 1);//Adiciona os nós no grafo
             
-            e0 = agedge(g, nos[i], notf[0], NULL, 1);
-            sprintf(estados, "%d", (int)maquina.states[i].transitions[j].symbol);
-            agsafeset(e0, "label", estados, "");
+            e0 = agedge(g, vertex[i], noAux[0], NULL, 1);
+            sprintf(auxString, "%d", (int)maquina.states[i].transitions[j].symbol);
+            agsafeset(e0, "label", auxString, "");
         }
     }
 
