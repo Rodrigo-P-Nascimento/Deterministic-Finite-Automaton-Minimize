@@ -11,45 +11,44 @@ int main() {
 
     Machine_alphabet_t alfabeto[] = {0, 1};
     Machine_state_t filhos[3];
-    Machine_Transition_t tranzas[3][2];
+    Machine_Transition_t transicoes[3][2];
 
-    tranzas[0][0].destState = 0;
-    tranzas[0][0].symbol = 0;
+    transicoes[0][0].destState = 0;
+    transicoes[0][0].symbol = 0;
 
-    tranzas[0][1].destState = 1;
-    tranzas[0][1].symbol = 1;
+    transicoes[0][1].destState = 1;
+    transicoes[0][1].symbol = 1;
 
-    tranzas[1][0].destState = 1;
-    tranzas[1][0].symbol = 0;
+    transicoes[1][0].destState = 1;
+    transicoes[1][0].symbol = 0;
 
-    tranzas[1][1].destState = 2;
-    tranzas[1][1].symbol = 1;
+    transicoes[1][1].destState = 2;
+    transicoes[1][1].symbol = 1;
 
-    tranzas[2][0].destState = 2;
-    tranzas[2][0].symbol = 0;
+    transicoes[2][0].destState = 2;
+    transicoes[2][0].symbol = 0;
 
-    tranzas[2][1].destState = 2;
-    tranzas[2][1].symbol = 1;
+    transicoes[2][1].destState = 2;
+    transicoes[2][1].symbol = 1;
 
     filhos[0].stateID = 0;
-    filhos[0].transitions = tranzas[0];
+    filhos[0].transitions = transicoes[0];
     filhos[0].isFinal = false;
 
     filhos[1].stateID = 1;
-    filhos[1].transitions = tranzas[1];
+    filhos[1].transitions = transicoes[1];
     filhos[1].isFinal = false;
 
     filhos[2].stateID = 2;
-    filhos[2].transitions = tranzas[2];
+    filhos[2].transitions = transicoes[2];
     filhos[2].isFinal = true;
 
     maquina.alphabet = alfabeto;
     maquina.states = filhos;
     maquina.initial = 0;
 
-    size_t tamAlpha = 2;
+    size_t tamAlpha = sizeof(maquina.alphabet)/sizeof(maquina.alphabet[0]);
     size_t quantStates = 3;
-    size_t quantTrans = 6;
 
     Agnode_t* nos[quantStates];
     Agraph_t *g;
@@ -75,17 +74,6 @@ int main() {
             agsafeset(nos[i], "peripheries", "2", "");
         }
     }
-
-    //setando os nós como o formato de circulo
-    //agsafeset(n1, "shape", "diamond", "");
-    //agsafeset(n2, "shape", "circle", "");
-    //agsafeset(n3, "shape", "circle", "");
-
-    //dando o formato de double-circle nos nós finais
-    //agsafeset(n2, "peripheries", "2", "");
-    //agsafeset(n3, "peripheries", "2", "");
-    //int qauntTransi = sizeof(maquina.states[0].transitions);
-    //printf("Quantidade de arestas na maquina: %d\n",qauntTransi);
 
     Agnode_t *notf[0] = {};
 
