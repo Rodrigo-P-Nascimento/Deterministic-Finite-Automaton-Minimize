@@ -7,7 +7,7 @@
 int main() {
 
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-    //Declaramos a maquina aqui bro
+    //Declaramos a maquina aqui bro Essa parte pode ser apagada apos a completa interação com o codigo final Egidio
     Machine_t maquina;
 
     Machine_alphabet_t alfabeto[] = {0, 1};
@@ -49,58 +49,58 @@ int main() {
     maquina.initial = 0;
     
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-    size_t tamAlpha = sizeof(maquina.alphabet)/sizeof(maquina.alphabet[0]);
-    size_t quantStates = sizeof(maquina.states)/sizeof(maquina.states[0]);
+    size_t tamAlpha = sizeof(maquina.alphabet)/sizeof(maquina.alphabet[0]);//alphabet size
+    size_t quantStates = 3// POR ENQUANTO PRECISAMOS SABER A QUANTIDADE DE ESTADOS ANTES 
 
-    Agnode_t vertex[quantStates];
-    Agraph_t *g;
-    Agedge_t *e0;
+    Agnode_t* vertex[quantStates];//Array of vertices
+    Agraph_t *g;//the graph object
+    Agedge_t *e0;//this represents an edge, so we generalize it
     char auxString[20];
 
     GVC_t *gvc = gvContext();
 
-    // Cria o grafo
+    // Creat the graph itself
     g = agopen("g", Agdirected, NULL);
 
     for(int i = 0; i < quantStates; i++){
-        sprintf(auxString, "q%d", i);//fazemos um casting de int para string
-        vertex[i] = agnode(g, auxString, 1);//Adiciona os nós no grafo
+        sprintf(auxString, "q%d", i);//We made this custom string "q_" to be better see in the graph
+        vertex[i] = agnode(g, auxString, 1);//Add vertex to the graph
 
-        if(i == maquina.initial){
+        if(i == maquina.initial){//if it's the initial vertex with set it as a diamond shape, if not the vertex will be a circle
             agsafeset(vertex[i], "shape", "diamond", "");
         }else{
-            agsafeset(vertex[i], "shape", "circle", "");//setando os nós como o formato de circulo
+            agsafeset(vertex[i], "shape", "circle", "");
         }
 
-        if(maquina.states[i].isFinal){
+        if(maquina.states[i].isFinal){//if the vertex is final we set it as a double circle, just add a new property
             agsafeset(vertex[i], "peripheries", "2", "");
         }
     }
 
-    Agnode_t Aux[0] = {};
+    Agnode_t* noAux[0] = {};//As said, noAux is a auxiliar vertex, we must keep it!
 
     for(size_t i = 0; i < quantStates; i++){
         for(size_t j = 0; j < tamAlpha; j++){
 
             sprintf(auxString, "q%d", maquina.states[i].transitions[j].destState);
-            noAux[0] = agnode(g, auxString, 1);//Adiciona os nós no grafo
+            noAux[0] = agnode(g, auxString, 1);//Add vertex to the graph
             
-            e0 = agedge(g, vertex[i], noAux[0], NULL, 1);
+            e0 = agedge(g, vertex[i], noAux[0], NULL, 1);//Add a edge to the graph
             sprintf(auxString, "%d", (int)maquina.states[i].transitions[j].symbol);
-            agsafeset(e0, "label", auxString, "");
+            agsafeset(e0, "label", auxString, "");//Set the label on it
         }
     }
 
-    //Pra deixar o grafo na horizontal e da esquerda para a direita
+    //To make the graph horizontal and from left to right
     agsafeset(g, "rankdir", "LR", "");
 
-    // Define o layout do grafo
+    //Defines the layout of the graph
     gvLayout(gvc, g, "dot");
 
-    // Renderiza o grafo para um arquivo
+    //Save the graph on a file
     gvRenderFilename(gvc, g, "png", "output.png");
 
-    // Libera os recursos
+    //Free memory
     gvFreeLayout(gvc, g);
     agclose(g);
     gvFreeContext(gvc);
