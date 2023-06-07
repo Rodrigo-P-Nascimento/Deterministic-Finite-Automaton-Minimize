@@ -8,8 +8,15 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define Machine_stateID_t uint32_t
-#define Machine_alphabet_t uint32_t
+typedef union {
+    uint32_t S;
+    struct {
+        uint16_t S1;
+        uint16_t S2;
+    };
+} Machine_stateID_t;
+
+typedef uint32_t Machine_alphabet_t;
 
 typedef struct{
     Machine_stateID_t destState;
@@ -18,13 +25,13 @@ typedef struct{
 
 typedef struct {
     Machine_stateID_t stateID;
-    Machine_Transition_t* transitions;
+    struct {Machine_Transition_t* data; uint32_t len;} transitions;
     bool isFinal;
 } Machine_state_t;
 
 typedef struct {
-    Machine_alphabet_t* alphabet;
-    Machine_state_t* states;
+    struct {Machine_alphabet_t* data; uint32_t len;} alphabet;
+    struct {Machine_state_t* data; uint32_t len;} states;
     Machine_stateID_t initial;
 }Machine_t;
 

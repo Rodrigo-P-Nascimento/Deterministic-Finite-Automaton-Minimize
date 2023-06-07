@@ -237,10 +237,10 @@ static inline uint32_t hash(const char* key){
 static inline Machine_stateID_t idx(char* src){
     for(uint32_t i = 0; i < len(a.states); ++i){
         if (!strcmp(a.states.data[i], src))
-            return i;
+            return (Machine_stateID_t)i;
     }
 
-    return UINT32_MAX;
+    return (Machine_stateID_t)UINT32_MAX;
 }
 
 static inline void populateStates(void** args){
@@ -248,19 +248,20 @@ static inline void populateStates(void** args){
 
     //if the current state is in the final states array, sets the boolean to true
     for(uint32_t j = 0; j < len(a.F); ++j)
-        state->isFinal = strcmp(a.F.data[j], a.states.data[state->stateID]) == 0? true: false;
+        state->isFinal = strcmp(a.F.data[j], a.states.data[state->stateID.S]) == 0? true: false;
 
     //retrieve the transitions array and allocate the machine transitions array
-    Transition_t transitions = Find(a.transitions, a.states.data[state->stateID]);
+    Transition_t transitions = Find(a.transitions, a.states.data[state->stateID.S]);
     assert(transitions.array != NULL);
-    state->transitions = calloc(sizeof(Machine_Transition_t), transitions.arrSize);
+    state->transitions.data = calloc(sizeof(Machine_Transition_t), transitions.arrSize);
+    state->transitions.len = transitions.arrSize;
 
     //populate the machine transitions array
     for (uint32_t j = 0; j < transitions.arrSize; ++j){
-        state->transitions[j].symbol = hash(transitions.array[j]->symbol);
-        state->transitions[j].destState = idx(transitions.array[j]->state);
+        state->transitions.data[j].symbol = hash(transitions.array[j]->symbol);
+        state->transitions.data[j].destState = idx(transitions.array[j]->state);
 
-        if (state->transitions[j].destState == UINT32_MAX)
+        if (state->transitions.data[j].destState.S == UINT32_MAX)
             //error, o estado destino da transição não está na lista de estados
             exit(-1);
     }
@@ -272,19 +273,22 @@ void InitMachine(Machine_t* machine){
     uint32_t i;
 
     //allocate the alphabet array and populate it with the hash of the string
-    machine->alphabet = calloc(len(a.alphabet), sizeof(Machine_alphabet_t));
+    machine->alphabet.len = len(a.alphabet);
+    machine->alphabet.data = calloc(sizeof(Machine_alphabet_t), len(a.alphabet));
     for(i = 0; i < len(a.alphabet); ++i){
-        machine->alphabet[i] = hash(a.alphabet.data[i]);
+        machine->alphabet.data[i] = hash(a.alphabet.data[i]);
     }
 
     ThreadTask task = {.task = populateStates, .args = calloc(2, sizeof(void*))};
     WaitGroup* wg = WG_New(0);
 
     //allocate the states array
-    machine->states = calloc(sizeof(Machine_state_t), len(a.states));
+    machine->states.data = calloc(sizeof(Machine_state_t), len(a.states));
+    machine->states.len = len(a.states);
+
     for(i = 0; i < len(a.states); ++i){
-        machine->states[i].stateID = i;
-        task.args[0] = &machine->states[i];
+        machine->states.data[i].stateID = (Machine_stateID_t)i;
+        task.args[0] = &machine->states.data[i];
         task.args[1] = wg;
 
         WG_Add(wg, 1);

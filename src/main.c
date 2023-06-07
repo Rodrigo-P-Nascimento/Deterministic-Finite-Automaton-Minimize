@@ -8,6 +8,7 @@
 #include "machine/machine.h"
 #include "input/input.h"
 #include "Threading/threading.h"
+#include "Myhill-Nerode/minimization.h"
 
 int main(int argc, char** argv){
 
@@ -40,6 +41,7 @@ int main(int argc, char** argv){
 
     printf("input file read\n");
     InitMachine(&machine);
+    Minimize(&machine);
 
     return 0;
 }

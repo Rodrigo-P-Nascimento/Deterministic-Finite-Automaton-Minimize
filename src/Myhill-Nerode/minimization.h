@@ -2,7 +2,8 @@
 // Created by ekank on 27/05/23.
 //
 
-#ifndef TDC_MINIMIZATION_H
-#define TDC_MINIMIZATION_H
+#pragma once
 
-#endif //TDC_MINIMIZATION_H
+#include "../machine/machine.h"
+
+void Minimize(Machine_t* machine);
