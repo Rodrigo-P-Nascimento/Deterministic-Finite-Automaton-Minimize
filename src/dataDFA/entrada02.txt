@@ -1,0 +1,12 @@
+alfabeto:0,1
+estados:q1, q2, q3
+inicial:q1
+finais:q2
+transicoes
+q1,q1,0
+q1,q2,1
+q2,q2,1
+q2,q3,0
+q3,q2,1
+q3,q2,0
+
