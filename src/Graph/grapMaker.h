@@ -7,5 +7,5 @@
 
 #include "../machine/machine.h"
 
-void RenderMachine(Machine_t* maquina);
+void RenderMachine(Machine_t* maquina, char* path);
 #endif //TDC_GRAPMAKER_H

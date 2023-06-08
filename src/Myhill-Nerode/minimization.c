@@ -6,6 +6,7 @@
 
 #include <stdlib.h>
 #include <assert.h>
+#include <stdio.h>
 
 #define TransitionDest(state) machine->states.data[state].transitions.data
 
@@ -36,6 +37,7 @@ void Minimize(Machine_t* machine){
         for(uint32_t j = 0; j < i; ++j){
             if(machine->states.data[i].isFinal != machine->states.data[j].isFinal) {
                 table[i][j] = true;
+                printf("par de estados q%d q%d marcados\n", i , j);
                 --statesDiff;
             }
         }
@@ -54,6 +56,7 @@ void Minimize(Machine_t* machine){
                         Machine_stateID_t id2 = TransitionDest(j)[k].destState;
 
                         if (table[id1.S][id2.S] || table[id2.S][id1.S]) {
+                            printf("par de estados q%d q%d marcados\n", i , j);
                             table[i][j] = true;
                             --statesDiff;
                             minimal = false;
@@ -76,6 +79,7 @@ void Minimize(Machine_t* machine){
         for (uint32_t j = 0; j < i; ++j) {
             if(!table[i][j]){
                 combined[idx++] = (Machine_stateID_t){.S1 = j, .S2 = i};
+                printf("estado combinado: q%d q%d\n", j, i);
             }
         }
     }
@@ -94,8 +98,9 @@ void Minimize(Machine_t* machine){
         }
 
         //if state combined
-        Machine_stateID_t id  = isIn(machine->states.data[i].stateID, combined, statesDiff);
+        Machine_stateID_t id  = isIn(data[i].stateID, combined, statesDiff);
         if(id.S){
+            printf("estado q%d se tornou q%d q%d\n", data[i].stateID.S, id.S1, id.S2);
             aux[idx].stateID = id;
             if(data[i].stateID.S == (uint32_t)id.S1){
                 free(data[id.S2].transitions.data);
@@ -108,6 +113,7 @@ void Minimize(Machine_t* machine){
                     true:
                     false;
         }else{
+            printf("estado q%d não mudou\n", data[i].stateID.S);
             aux[idx].stateID = data[i].stateID;
             aux[idx].isFinal = data[i].isFinal;
         }
@@ -119,6 +125,7 @@ void Minimize(Machine_t* machine){
             //if the transition leads to a combined state, swap for the combined state
             id = isIn(id, combined, statesDiff);
             if(id.S){
+                printf("transições do estado mudaram: %c -> q%dq%d\n", (char)TransitionDest(i)[k].symbol, id.S1, id.S2);
                 TransitionDest(i)[k].destState = id;
             }
         }

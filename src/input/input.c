@@ -4,8 +4,6 @@
 
 #include "input.h"
 #include "../dictionary/dictionary.h"
-#include "../Threading/threading.h"
-#include "../Threading/wait_group.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -65,17 +63,43 @@ static void Tokenize(char* src, String_l* dst) {
     }
 }
 
-static inline void Assign(char* buf, String_l * restrict dst){
+static inline void remove_spaces(char* s) {
+    char* d = s;
+    do {
+        while (*d == ' ') {
+            ++d;
+        }
+    } while ((*s++ = *d++));
+}
+
+static inline void Assign(char* buf, String_l * restrict dst, bool allowEmpty){
 
     String data = NULL;
+
+    remove_spaces(buf);
 
     Strip(buf, &data);
 
     if(!data){
-        //TODO tratar valor
+        if(allowEmpty){
+            printf("a maquina não possui estados finais, não faz sentido minimizar\n");
+            exit(0);
+        }
+        fprintf(stderr, "entrada inválida, dados insuficientes");
+        exit(EXIT_FAILURE);
     }
 
     Tokenize(data, dst);
+}
+
+static inline bool isIn(char* restrict s, char** arr, uint32_t size){
+    for(uint32_t i = 0; i < size; ++i){
+           if(strcmp(s, arr[i]) == 0){
+               return true;
+           }
+    }
+
+    return false;
 }
 
 static inline void Dispatch(void** arg){    // [Dictionary, key, Transition]
@@ -85,7 +109,6 @@ static inline void Dispatch(void** arg){    // [Dictionary, key, Transition]
            ((Transition*)arg[2])->state, ((Transition*)arg[2])->symbol);
 
     free(arg[1]);
-    WG_Done(arg[3]);
 }
 
 #define readLine(buffer, size, fp)          \
@@ -120,12 +143,12 @@ error_t ReadFile(char* path) {
 
     // Read the alphabet from the file and assign it to DFA_file.alphabet
     readLine(buffer, BUFFER_SIZE, fp);
-    Assign(buffer, &a.alphabet);
+    Assign(buffer, &a.alphabet, false);
     printf("alphabet read\n");
 
     // Read the states from the file and assign them to DFA_file.states
     readLine(buffer, BUFFER_SIZE, fp);
-    Assign(buffer, &a.states);
+    Assign(buffer, &a.states, false);
     printf("states read\n");
 
     // Read the initial state from the file and assign it to DFA_file.q0
@@ -133,13 +156,17 @@ error_t ReadFile(char* path) {
     {
         assert(strtok(buffer, ":") != NULL);
         char* tkn = strtok(NULL, ":");
+        if (tkn == NULL){
+            fprintf(stderr, "Maquina não possui estado incial");
+            exit(EXIT_FAILURE);
+        }
         a.q0 = strdup(tkn);
     }
     printf("initial state read\n");
 
     // Read the final states from the file and assign them to DFA_file.F
     readLine(buffer, BUFFER_SIZE, fp);
-    Assign(buffer, &a.F);
+    Assign(buffer, &a.F, true);
     printf("final states read\n");
 
     // Read the transitions from the file and create dictionary entries using multithreading
@@ -152,7 +179,12 @@ error_t ReadFile(char* path) {
     }
 
     // Read the transitions from the file into the buffer
-    assert(fread(buffer, char_size, 2000, fp) < BUFFER_SIZE * 10);
+    uint32_t nread = fread(buffer, char_size, 2000, fp);
+    assert( nread < BUFFER_SIZE * 10);
+    if(nread < 11){
+        fprintf(stderr, "Maquina não possui transições\n");
+        exit(EXIT_FAILURE);
+    }
 
     // Create the transitions dictionary
     a.transitions = CreateDictionary(len(a.alphabet));
@@ -161,21 +193,21 @@ error_t ReadFile(char* path) {
     // Prepare the task for multithreading
     String reent;
     String token = strtok_r(buffer, "\n", &reent);
-    ThreadTask task = {.task = Dispatch, .args = calloc(4, sizeof(void*))};
-    WaitGroup* wg = WG_New(0);
 
     // Process each line of the buffer as a transition and add it to the dictionary
      do{
-        // Handle cases where the input is not in the form "state, state, symbol"
-        // Handle cases where the symbol is not in the alphabet
-        if (0) {
-            goto waitgroup;
-        }
-
         // Extract the state0, state1, and symbol from the token
         String state0 = strdup(strtok(token, ",")),
                 state1 = strdup(strtok(NULL, ",")),
                 symbol = strdup(strtok(NULL, ","));
+
+         if (!isIn(state0, a.states.data, len(a.states)) ||
+                 !isIn(state1, a.states.data, len(a.states)) ||
+                 !isIn(symbol, a.alphabet.data, len(a.alphabet))) {
+
+             fprintf(stderr, "transição inválida\n");
+             exit(EXIT_FAILURE);
+         }
 
          printf("read transition %s -> %s @ %s\n", state0, state1, symbol);
         // Create a Transition object
@@ -184,25 +216,11 @@ error_t ReadFile(char* path) {
         tr->symbol = symbol;
 
         // Set the arguments for the Dispatch task
-        task.args[0] = (void*)a.transitions;
-        task.args[1] = (void*)strdup(state0);
-        task.args[2] = (void*)tr;
-        task.args[3] = (void*)wg;
-
-        // Increment the WaitGroup counter
-        WG_Add(wg, 1);
+        void* args[] = {(void*)a.transitions,(void*)strdup(state0), (void*)tr};
 
         // Add the task to the task queue
-        Dispatch(task.args);
-//        AddTask(task);
+        Dispatch(args);
     }while ((token = strtok_r(NULL, "\n", &reent)));
-
-    // Wait for all tasks to complete
-    WG_Wait(wg);
-
-    waitgroup:
-    // Destroy the WaitGroup and free allocated resources
-    WG_Destroy(wg);
 
     file:
     // Close the file
@@ -236,8 +254,7 @@ static inline Machine_stateID_t idx(char* src){
     return (Machine_stateID_t)UINT32_MAX;
 }
 
-static inline void populateStates(void** args){
-    Machine_state_t* state = (Machine_state_t*)args[0];
+static inline void populateStates(Machine_state_t* state){
 
     assert(state->isFinal == false);
     //if the current state is in the final states array, sets the boolean to true
@@ -249,6 +266,10 @@ static inline void populateStates(void** args){
 
     //retrieve the transitions array and allocate the machine transitions array
     Transition_t transitions = Find(a.transitions, a.states.data[state->stateID.S]);
+    if(transitions.arrSize != len(a.alphabet)){
+        fprintf(stderr, "estado %s não possui todas as transições\n", a.states.data[state->stateID.S]);
+        exit(EXIT_FAILURE);
+    }
     assert(transitions.array != NULL);
     state->transitions.data = calloc(sizeof(Machine_Transition_t), transitions.arrSize);
     state->transitions.len = transitions.arrSize;
@@ -260,10 +281,9 @@ static inline void populateStates(void** args){
 
         if (state->transitions.data[j].destState.S == UINT32_MAX)
             //error, o estado destino da transição não está na lista de estados
-            exit(-1);
+            exit(EXIT_FAILURE);
     }
 
-    WG_Done(args[1]);
 }
 
 void InitMachine(Machine_t* machine){
@@ -276,25 +296,15 @@ void InitMachine(Machine_t* machine){
         machine->alphabet.data[i] = hash(a.alphabet.data[i]);
     }
 
-    ThreadTask task = {.task = populateStates, .args = calloc(2, sizeof(void*))};
-    WaitGroup* wg = WG_New(0);
-
     //allocate the states array
     machine->states.data = calloc(sizeof(Machine_state_t), len(a.states));
     machine->states.len = len(a.states);
 
     for(i = 0; i < len(a.states); ++i){
         machine->states.data[i].stateID = (Machine_stateID_t)i;
-        task.args[0] = &machine->states.data[i];
-        task.args[1] = wg;
 
-        WG_Add(wg, 1);
-        populateStates(task.args);
-//        AddTask(task);
+        populateStates(&machine->states.data[i]);
     }
-
-    WG_Wait(wg);
-    WG_Destroy(wg);
 }
 
 static inline void Destroy(String_l * str){
