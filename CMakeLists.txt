@@ -11,4 +11,5 @@ add_executable(TDC
 
 target_link_libraries(TDC PRIVATE ${CMAKE_THREAD_LIBS_INIT} -fsanitize=undefined -fsanitize=bounds -fsanitize=object-size gvc cgraph)
 
-target_compile_options(TDC PRIVATE -Wall -Wextra -Werror -fsanitize=undefined -fsanitize=bounds -fsanitize=object-size)
+target_compile_options(TDC PRIVATE -Wall -Wextra -Werror -O2 -fsanitize=undefined -fsanitize=bounds -fsanitize=object-size)
+#target_compile_options(TDC PRIVATE -Wall -Wextra -Werror)

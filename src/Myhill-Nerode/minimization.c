@@ -53,7 +53,7 @@ void Minimize(Machine_t* machine){
                         Machine_stateID_t id1 = TransitionDest(i)[k].destState;
                         Machine_stateID_t id2 = TransitionDest(j)[k].destState;
 
-                        if (id2.S < id1.S && table[id1.S][id2.S]) {
+                        if (table[id1.S][id2.S] || table[id2.S][id1.S]) {
                             table[i][j] = true;
                             --statesDiff;
                             minimal = false;
@@ -75,7 +75,7 @@ void Minimize(Machine_t* machine){
     for(uint32_t i = 1; i < machine->states.len; ++i) {
         for (uint32_t j = 0; j < i; ++j) {
             if(!table[i][j]){
-                combined[idx++] = (Machine_stateID_t){.S1 = i, .S2 = j};
+                combined[idx++] = (Machine_stateID_t){.S1 = j, .S2 = i};
             }
         }
     }
@@ -124,6 +124,7 @@ void Minimize(Machine_t* machine){
         }
 
         aux[idx].transitions =  data[i].transitions;
+        assert(idx < machine->states.len-statesDiff);
         ++idx;
     }
 
@@ -132,5 +133,8 @@ void Minimize(Machine_t* machine){
     machine->states.data = aux;
     machine->states.len = idx;
 
+    for (uint32_t i = 1; i < machine->states.len; ++i){
+        free(table[i]);
+    }
     free(table);
 }

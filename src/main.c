@@ -18,9 +18,8 @@ int main(int argc, char** argv){
         exit(-1);
     }
 
-    CreateThreadPool();
-
-    printf("threads created\n");
+    //CreateThreadPool();
+    //printf("threads created\n");
 
     Machine_t machine = {};
     error_t err = ReadFile(argv[1]);
@@ -42,7 +41,9 @@ int main(int argc, char** argv){
 
     printf("input file read\n");
     InitMachine(&machine);
+    printf("machine initialized\n");
     Minimize(&machine);
+    printf("machine minimized\n");
     RenderMachine(&machine);
 
     return 0;

@@ -1,7 +1,6 @@
 #include <graphviz/cgraph.h>
 #include <graphviz/gvc.h>
 #include <stdint.h>
-#include <stdlib.h>
 
 #include "grapMaker.h"
 
@@ -56,8 +55,7 @@ void RenderMachine(Machine_t* maquina){
 
             e0 = agedge(g, vertex[i], noAux[0], NULL, 1);//Add a edge to the graph
 
-            char* label = unhash(maquina->states.data[i].transitions.data[j].symbol);
-            sprintf(auxString, "%s", label);
+            sprintf(auxString, "%c", (char)maquina->states.data[i].transitions.data[j].symbol);
             agsafeset(e0, "label", auxString, "");//Set the label on it
         }
     }

@@ -223,15 +223,8 @@ error_t Validate(void){
 }
 
 static inline uint32_t hash(const char* key){
-    uint32_t hash = 0;
-    const uint8_t factor = 31;
 
-    while (*key) {
-        hash = hash * factor + (*key);
-        key++;
-    }
-
-    return hash % UINT32_MAX;
+    return key[0];
 }
 
 static inline Machine_stateID_t idx(char* src){

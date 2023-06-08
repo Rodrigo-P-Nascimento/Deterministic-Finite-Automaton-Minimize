@@ -1,5 +1,5 @@
 alfabeto:0,1
-estados:q1, q2, q3
+estados:q1,q2,q3
 inicial:q1
 finais:q2
 transicoes
