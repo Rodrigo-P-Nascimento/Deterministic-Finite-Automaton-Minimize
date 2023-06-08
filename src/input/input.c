@@ -246,9 +246,13 @@ static inline Machine_stateID_t idx(char* src){
 static inline void populateStates(void** args){
     Machine_state_t* state = (Machine_state_t*)args[0];
 
+    assert(state->isFinal == false);
     //if the current state is in the final states array, sets the boolean to true
     for(uint32_t j = 0; j < len(a.F); ++j)
-        state->isFinal = strcmp(a.F.data[j], a.states.data[state->stateID.S]) == 0? true: false;
+        if(strcmp(a.F.data[j], a.states.data[state->stateID.S]) == 0){
+            state->isFinal = true;
+            break;
+        }
 
     //retrieve the transitions array and allocate the machine transitions array
     Transition_t transitions = Find(a.transitions, a.states.data[state->stateID.S]);

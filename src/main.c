@@ -9,6 +9,7 @@
 #include "input/input.h"
 #include "Threading/threading.h"
 #include "Myhill-Nerode/minimization.h"
+#include "Graph/grapMaker.h"
 
 int main(int argc, char** argv){
 
@@ -42,6 +43,7 @@ int main(int argc, char** argv){
     printf("input file read\n");
     InitMachine(&machine);
     Minimize(&machine);
+    RenderMachine(&machine);
 
     return 0;
 }
