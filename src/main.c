@@ -7,19 +7,15 @@
 
 #include "machine/machine.h"
 #include "input/input.h"
-#include "Threading/threading.h"
 #include "Myhill-Nerode/minimization.h"
 #include "Graph/grapMaker.h"
 
 int main(int argc, char** argv){
 
-    if(argc < 2){
+    if(argc < 3){
         //sem arquivo
         exit(-1);
     }
-
-    //CreateThreadPool();
-    //printf("threads created\n");
 
     Machine_t machine = {};
     error_t err = ReadFile(argv[1]);
@@ -44,7 +40,8 @@ int main(int argc, char** argv){
     printf("machine initialized\n");
     Minimize(&machine);
     printf("machine minimized\n");
-    RenderMachine(&machine);
+    RenderMachine(&machine, argv[2]);
+    printf("machine rendered\n");
 
     return 0;
 }

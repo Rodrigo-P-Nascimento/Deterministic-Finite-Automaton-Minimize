@@ -1,10 +1,11 @@
 #include <graphviz/cgraph.h>
 #include <graphviz/gvc.h>
 #include <stdint.h>
+#include <sys/stat.h>
 
 #include "grapMaker.h"
 
-void RenderMachine(Machine_t* maquina){
+void RenderMachine(Machine_t* maquina, char* const path){
 
     size_t tamAlpha = maquina->alphabet.len;//alphabet size
     size_t quantStates = maquina->states.len;
@@ -44,7 +45,6 @@ void RenderMachine(Machine_t* maquina){
     for(size_t i = 0; i < quantStates; i++){
         for(size_t j = 0; j < tamAlpha; j++){
 
-            //TODO mudar para o nome original do estado
             if(maquina->states.data[i].transitions.data[j].destState.S < UINT16_MAX){
                 sprintf(auxString, "q%d", maquina->states.data[i].transitions.data[j].destState.S);
             }else{
@@ -68,7 +68,22 @@ void RenderMachine(Machine_t* maquina){
 
     //Save the graph on a file
     //TODO mudar nome depois
-    gvRenderFilename(gvc, g, "png", "/home/ekank/Documents/Programming/TDC/output.png");
+    char filename[50];
+    struct stat s = {};
+
+    if(stat(path, &s) == 0 && S_ISDIR(s.st_mode)){
+#ifdef _WIN32
+        sprintf(filename, "%s\\output.png", path);
+#else
+        sprintf(filename, "%s/output.png", path);
+#endif
+    }else{
+        strcpy(filename, "output.png");
+    }
+    assert(strlen(filename) != 0);
+
+    printf("salvando imagem em: %s\n", filename);
+    gvRenderFilename(gvc, g, "png", filename);
 
     //Free memory
     gvFreeLayout(gvc, g);
