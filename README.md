@@ -11,6 +11,6 @@ q0, q1, a # Represents a transition from q0 to q1 with symbol "a"
 q1, q2, b # Represents a transition from q1 to q2 with symbol "b"
 ...
 
-Next, the application should use the Myhill-Nerode algorithm (or Table Filling Method) to minimize the given DFA. The algorithm should display the step-by-step execution on the screen and, in the end, use a library or software to display the diagram of the resulting minimized DFA.
+The application uses the Myhill-Nerode algorithm (or Table Fill Method) to minimize the provided DFA. The algorithm displays the execution step by step on the screen and, at the end, uses a library called graphviz to display the resulting minimized DFA diagram.
 
 Important: It is necessary to verify if the DFA provided as input is valid before using the conversion algorithm.
